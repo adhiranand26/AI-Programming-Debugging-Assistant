@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { useUIStore, useSettingsStore, useLayoutStore } from '../../store';
-import { Search, ChevronRight, FileText, Settings, Sparkles, Terminal, Code, Palette, Type, LayoutTemplate } from 'lucide-react';
+import { useUIStore, useSettingsStore } from '../../store';
+import { Search, ChevronRight, FileText, Sparkles, Terminal, Code, Palette, Type } from 'lucide-react';
 
 interface Command {
   id: string;
@@ -42,7 +42,7 @@ const HighlightedText = ({ text, highlight }: { text: string; highlight: string 
 
 export const CommandPalette: React.FC = () => {
   const { setCommandPaletteOpen } = useUIStore();
-  const { theme, useSettingsStore: _useSettingsStore } = { ...useSettingsStore() }; // Simplified for now
+  // removed theme
   
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
@@ -285,7 +285,7 @@ export const CommandPalette: React.FC = () => {
                 return (
                   <button
                     key={item.id}
-                    ref={el => itemRefs.current[i] = el}
+                    ref={el => { itemRefs.current[i] = el; }}
                     onClick={() => { item.action(); setSelectedIndex(i); }}
                     onMouseEnter={() => setSelectedIndex(i)}
                     className={`w-full flex items-center px-3 py-2.5 rounded-lg text-left transition-colors duration-75 ${isActive ? 'bg-accent-violet text-white' : 'text-secondary hover:bg-overlay'}`}
@@ -314,7 +314,7 @@ export const CommandPalette: React.FC = () => {
                       return (
                         <button
                           key={cmd.id}
-                          ref={el => itemRefs.current[idx] = el}
+                          ref={el => { itemRefs.current[idx] = el; }}
                           onClick={() => { cmd.action(); setSelectedIndex(idx); }}
                           onMouseEnter={() => setSelectedIndex(idx)}
                           className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-left transition-colors duration-75 group ${isActive ? 'bg-accent-violet text-white' : 'text-secondary hover:bg-overlay'}`}

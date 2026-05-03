@@ -50,7 +50,7 @@ export const useAIStore = create<AIState>()(
         )
       })),
       clearMessages: () => set({ messages: [] }),
-      setStreaming: (isStreaming) => set((state) => {
+      setStreaming: (isStreaming) => set(() => {
         if (isStreaming) {
           return { isStreaming, streamMetrics: { startTime: Date.now(), tokens: 0 } };
         }

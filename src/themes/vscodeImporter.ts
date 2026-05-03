@@ -1,4 +1,4 @@
-import { useSettingsStore } from '../store';
+// Removed unused useSettingsStore import
 
 export const parseVSCodeTheme = (jsonString: string) => {
   try {

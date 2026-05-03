@@ -8,7 +8,7 @@ export const PulsePanel: React.FC = () => {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    let interval: NodeJS.Timeout;
+    let interval: ReturnType<typeof setInterval>;
     
     if (isStreaming && streamMetrics) {
       setVisible(true);

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useEditorStore, useUIStore } from '../../store';
-import { FilePlus, FolderOpen, Terminal, Settings, Sparkles, BookOpen, Code2 } from 'lucide-react';
+import { FilePlus, FolderOpen, Terminal, Sparkles, BookOpen, Code2 } from 'lucide-react';
 
 export const WelcomeScreen: React.FC = () => {
   const { openFile } = useEditorStore();

@@ -1,4 +1,5 @@
-import { useSettingsStore, AIProvider } from '../store/settings';
+import { useSettingsStore } from '../store/settings';
+import type { AIProvider } from '../store/settings';
 
 export interface StreamChatParams {
   provider: AIProvider;
@@ -69,7 +70,7 @@ export async function* streamChat({ provider, model, prompt, system }: StreamCha
   if (provider.type === 'ollama') {
     yield* streamOllama(provider.baseUrl || 'http://localhost:11434', model, prompt, system, aiTemperature, aiTopP, aiContextLength);
   } else if (provider.type === 'openai' || provider.type === 'openrouter' || provider.type === 'custom') {
-    yield* streamOpenAICompatible(provider, model, prompt, system, aiTemperature, aiTopP, aiContextLength);
+    yield* streamOpenAICompatible(provider, model, prompt, system, aiTemperature, aiTopP);
   } else if (provider.type === 'anthropic') {
     yield* streamAnthropic(provider, model, prompt, system, aiTemperature, aiTopP, aiContextLength);
   } else if (provider.type === 'google') {
@@ -129,7 +130,7 @@ async function* streamOllama(baseUrl: string, model: string, prompt: string, sys
   }
 }
 
-async function* streamOpenAICompatible(provider: AIProvider, model: string, prompt: string, system: string | undefined, temperature: number, top_p: number, max_tokens: number) {
+async function* streamOpenAICompatible(provider: AIProvider, model: string, prompt: string, system: string | undefined, temperature: number, top_p: number) {
   const url = provider.baseUrl || 'https://api.openai.com/v1';
   const apiKey = provider.apiKey;
   

@@ -1,16 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Editor, { useMonaco } from '@monaco-editor/react';
-import { useSettingsStore, useEditorStore, useUIStore } from '../../store';
+import { useSettingsStore, useEditorStore } from '../../store';
 import { TabBar } from '../editor/TabBar';
 import { WelcomeScreen } from '../editor/WelcomeScreen';
 import { ContextMenu } from '../ui/ContextMenu';
 import { DiffPanel } from '../editor/DiffPanel';
-import { getLanguageFromPath } from '../../utils/language';
+// Removed unused getLanguageFromPath
 
 export const EditorArea: React.FC = () => {
   const { editorFont, editorFontSize, editorLineHeight, wordWrap, minimap, ligatures } = useSettingsStore();
   const { openFiles, activeFileId, updateFileContent, setActiveSelection } = useEditorStore();
-  const { setCommandPaletteOpen } = useUIStore();
+  // Removed unused useUIStore call
   
   const monaco = useMonaco();
   const editorContainerRef = useRef<HTMLDivElement>(null);

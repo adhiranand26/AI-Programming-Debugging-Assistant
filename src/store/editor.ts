@@ -10,6 +10,7 @@ export interface FileTab {
   savedContent?: string;
   isDirty: boolean;
   isPinned: boolean;
+  fileHandle?: any; // FileSystemFileHandle
 }
 
 interface DiffState {

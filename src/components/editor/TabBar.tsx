@@ -1,6 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { useEditorStore } from '../../store';
-import { X, FileText, Code, FileJson, FileType, FileCode, Terminal } from 'lucide-react';
+import { X, FileText, FileJson, FileType, FileCode, Terminal } from 'lucide-react';
 
 export const TabBar: React.FC = () => {
   const { openFiles, activeFileId, setActiveFileId, closeFile, saveFile, discardFileChanges } = useEditorStore();

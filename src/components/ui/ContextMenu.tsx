@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { useUIStore } from '../../store';
+// Removed useUIStore
 import { Sparkles, FileText, Code, Copy, Scissors, ClipboardPaste } from 'lucide-react';
 
 interface ContextMenuProps {

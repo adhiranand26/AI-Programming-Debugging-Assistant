@@ -6,7 +6,7 @@ import 'xterm/css/xterm.css';
 import { useLayoutStore, useTerminalStore, useSettingsStore } from '../../store';
 import { Plus, X, Trash2, SplitSquareHorizontal } from 'lucide-react';
 
-const TerminalInstance = ({ id, active }: { id: string, active: boolean }) => {
+const TerminalInstance = ({ active }: { active: boolean }) => {
   const terminalRef = useRef<HTMLDivElement>(null);
   const { terminalHeight } = useLayoutStore();
   const { editorFont, editorFontSize } = useSettingsStore();
@@ -161,7 +161,7 @@ export const TerminalPanel: React.FC = () => {
       {/* Instances Container */}
       <div className="flex-1 relative overflow-hidden">
         {terminals.map(t => (
-          <TerminalInstance key={t.id} id={t.id} active={t.id === activeTerminalId} />
+          <TerminalInstance key={t.id} active={t.id === activeTerminalId} />
         ))}
       </div>
     </div>

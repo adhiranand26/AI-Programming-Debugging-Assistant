@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useLayoutStore, useAIStore, useEditorStore, useSettingsStore } from '../../store';
+import { useLayoutStore, useAIStore, useEditorStore, useSettingsStore, useUIStore } from '../../store';
 import { Send, Trash2, Play, Copy, Sparkles, Command, ChevronDown, Check, Settings } from 'lucide-react';
 import { checkOllamaConnection, fetchOllamaModels, streamChat } from '../../services/aiProvider';
 import { buildPrompt } from '../../services/contextBuilder';
