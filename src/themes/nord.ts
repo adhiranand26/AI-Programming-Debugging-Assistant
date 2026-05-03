@@ -1,0 +1,18 @@
+export const nord = {
+  '--bg-base': '#2e3440',
+  '--bg-panel': '#3b4252',
+  '--bg-overlay': '#434c5e',
+  '--bg-active': '#4c566a',
+  '--text-primary': '#eceff4',
+  '--text-secondary': '#e5e9f0',
+  '--text-muted': '#d8dee9',
+  '--border-default': '#4c566a',
+  '--border-hover': '#5e81ac',
+  '--border-active': '#81a1c1',
+  '--accent-violet': '#b48ead',
+  '--accent-violet-hover': '#c9a1c0',
+  '--accent-violet-transparent': 'rgba(180, 142, 173, 0.2)',
+  '--color-error': '#bf616a',
+  '--color-warning': '#ebcb8b',
+  '--color-success': '#a3be8c',
+};

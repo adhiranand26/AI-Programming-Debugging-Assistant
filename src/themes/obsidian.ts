@@ -1,0 +1,18 @@
+export const obsidian = {
+  '--bg-base': '#000000',
+  '--bg-panel': '#0c0c0c',
+  '--bg-overlay': '#141414',
+  '--bg-active': '#1e1e1e',
+  '--text-primary': '#ffffff',
+  '--text-secondary': '#a1a1aa',
+  '--text-muted': '#52525b',
+  '--border-default': '#27272a',
+  '--border-hover': '#3f3f46',
+  '--border-active': '#52525b',
+  '--accent-violet': '#818cf8',
+  '--accent-violet-hover': '#a5b4fc',
+  '--accent-violet-transparent': 'rgba(129, 140, 248, 0.2)',
+  '--color-error': '#fb7185',
+  '--color-warning': '#fbbf24',
+  '--color-success': '#34d399',
+};

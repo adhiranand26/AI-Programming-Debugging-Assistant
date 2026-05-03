@@ -1,0 +1,18 @@
+export const catppuccin = {
+  '--bg-base': '#1e1e2e',
+  '--bg-panel': '#181825',
+  '--bg-overlay': '#313244',
+  '--bg-active': '#45475a',
+  '--text-primary': '#cdd6f4',
+  '--text-secondary': '#bac2de',
+  '--text-muted': '#a6adc8',
+  '--border-default': '#313244',
+  '--border-hover': '#45475a',
+  '--border-active': '#585b70',
+  '--accent-violet': '#cba6f7',
+  '--accent-violet-hover': '#d8b9ff',
+  '--accent-violet-transparent': 'rgba(203, 166, 247, 0.2)',
+  '--color-error': '#f38ba8',
+  '--color-warning': '#f9e2af',
+  '--color-success': '#a6e3a1',
+};

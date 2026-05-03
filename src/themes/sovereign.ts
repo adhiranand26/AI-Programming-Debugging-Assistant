@@ -1,0 +1,18 @@
+export const sovereign = {
+  '--bg-base': '#0a0a0c',
+  '--bg-panel': '#111114',
+  '--bg-overlay': '#1a1a1f',
+  '--bg-active': '#232329',
+  '--text-primary': '#ffffff',
+  '--text-secondary': '#a0a0ab',
+  '--text-muted': '#6b6b76',
+  '--border-default': '#232329',
+  '--border-hover': '#34343d',
+  '--border-active': '#4a4a55',
+  '--accent-violet': '#7c6fff',
+  '--accent-violet-hover': '#8f85ff',
+  '--accent-violet-transparent': 'rgba(124, 111, 255, 0.2)',
+  '--color-error': '#ff4d6d',
+  '--color-warning': '#f5a623',
+  '--color-success': '#36d399',
+};

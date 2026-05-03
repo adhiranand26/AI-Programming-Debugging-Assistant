@@ -1,0 +1,18 @@
+export const rosePine = {
+  '--bg-base': '#191724',
+  '--bg-panel': '#1f1d2e',
+  '--bg-overlay': '#26233a',
+  '--bg-active': '#312f44',
+  '--text-primary': '#e0def4',
+  '--text-secondary': '#908caa',
+  '--text-muted': '#6e6a86',
+  '--border-default': '#2a273f',
+  '--border-hover': '#393552',
+  '--border-active': '#44415a',
+  '--accent-violet': '#c4a7e7',
+  '--accent-violet-hover': '#d1bbed',
+  '--accent-violet-transparent': 'rgba(196, 167, 231, 0.2)',
+  '--color-error': '#eb6f92',
+  '--color-warning': '#f6c177',
+  '--color-success': '#9ccfd8',
+};
