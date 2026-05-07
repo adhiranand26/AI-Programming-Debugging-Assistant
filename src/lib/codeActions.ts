@@ -1,7 +1,8 @@
 import { useEditorStore } from '../store/editor';
 import { useAIStore } from '../store/ai';
 import { buildPrompt } from '../services/contextBuilder';
-import { streamChat } from '../services/ollama';
+import { streamChat } from '../services/aiProvider';
+import { useSettingsStore } from '../store/settings';
 
 const ACTION_PROMPTS: Record<string, string> = {
   'FIX': "Fix the bug or issue in this code. Explain briefly what was wrong and return the corrected code only.",
@@ -17,6 +18,17 @@ const ACTION_PROMPTS: Record<string, string> = {
 export const runCodeAction = async (actionId: string, subContext?: string) => {
   const { openFiles, activeFileId, activeSelection } = useEditorStore.getState();
   const { activeModel, addMessage, updateMessage, setStreaming, setMode } = useAIStore.getState();
+  const { providers, activeProviderId, ollamaBaseUrl } = useSettingsStore.getState();
+
+  const getActiveProviderDetails = () => {
+    if (activeProviderId) {
+      const provider = providers.find(p => p.id === activeProviderId);
+      if (provider) return { provider, model: provider.defaultModel || activeModel };
+    }
+    return { provider: { id: 'ollama', type: 'ollama', name: 'Local Ollama', baseUrl: ollamaBaseUrl }, model: activeModel };
+  };
+
+  const { provider, model } = getActiveProviderDetails();
 
   const activeFile = openFiles.find(f => f.id === activeFileId);
   if (!activeFile) return;
@@ -42,7 +54,7 @@ export const runCodeAction = async (actionId: string, subContext?: string) => {
   setStreaming(true);
 
   try {
-    const stream = streamChat({ model: activeModel, prompt, system });
+    const stream = streamChat({ provider: provider as any, model, prompt, system });
     for await (const chunk of stream) {
       updateMessage(assistantMsgId, (prev) => prev + chunk);
       useAIStore.getState().incrementStreamTokens();

@@ -33,6 +33,7 @@ interface EditorState {
   openFile: (file: Omit<FileTab, 'isDirty' | 'isPinned' | 'language'> & { language?: string }) => void;
   closeFile: (id: string) => void;
   updateFileContent: (id: string, content: string) => void;
+  setLanguage: (id: string, language: string) => void;
   saveFile: (id: string) => void;
   discardFileChanges: (id: string) => void;
 }
@@ -81,7 +82,20 @@ export const useEditorStore = create<EditorState>()(
         const newFiles = state.openFiles.map(f => {
           if (f.id === id) {
             const isDirty = f.savedContent !== content;
-            return { ...f, content, isDirty };
+            let language = f.language;
+
+            // Simple language detection for untitled files
+            if (f.name === 'Untitled' && (f.language === 'plaintext' || !f.language)) {
+              const lower = content.toLowerCase();
+              if (content.includes('print(') || content.includes('def ')) language = 'python';
+              else if (content.includes('function') || content.includes('const ') || content.includes('console.log')) language = 'javascript';
+              else if (content.includes('import React') || content.includes('export const')) language = 'typescript';
+              else if (content.includes('<html>') || content.includes('<div>')) language = 'html';
+              else if (content.includes('package main') || content.includes('func main')) language = 'go';
+              else if (lower.includes('#include') || lower.includes('int main')) language = 'cpp';
+            }
+
+            return { ...f, content, isDirty, language };
           }
           return f;
         });
@@ -100,6 +114,9 @@ export const useEditorStore = create<EditorState>()(
           unsavedFileIds: newUnsaved
         };
       }),
+      setLanguage: (id, language) => set((state) => ({
+        openFiles: state.openFiles.map(f => f.id === id ? { ...f, language } : f)
+      })),
       saveFile: (id) => set((state) => {
         const newFiles = state.openFiles.map(f => {
           if (f.id === id) {

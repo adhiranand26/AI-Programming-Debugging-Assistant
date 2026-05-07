@@ -65,13 +65,13 @@ export const SettingsPanel: React.FC = () => {
                 <section>
                   <h3 className="text-[12px] font-semibold text-secondary uppercase tracking-wider mb-4">Themes</h3>
                   <div className="grid grid-cols-2 gap-3">
-                    {['sovereign', 'abyss', 'monokai', 'github-dark'].map(t => (
+                    {['sovereign', 'obsidian', 'nord', 'rosePine', 'catppuccin'].map(t => (
                       <div 
                         key={t}
-                        onClick={() => settings.updateSetting('theme', t)}
+                        onClick={() => settings.setTheme(t)}
                         className={`p-3 rounded-lg border cursor-pointer transition-all ${settings.theme === t ? 'border-accent-violet bg-accent-violet/5' : 'border-default hover:border-hover bg-panel'}`}
                       >
-                        <div className="text-[12px] capitalize mb-2">{t.replace('-', ' ')}</div>
+                        <div className="text-[12px] capitalize mb-2">{t.replace(/([A-Z])/g, ' $1').trim()}</div>
                         <div className="flex gap-1">
                           <div className="w-4 h-4 rounded-full bg-base border border-default" />
                           <div className="w-4 h-4 rounded-full bg-panel border border-default" />
@@ -252,6 +252,7 @@ export const SettingsPanel: React.FC = () => {
                                 className="w-full bg-base border border-default rounded-lg px-3 py-2 text-[12px] text-primary outline-none focus:border-accent-violet/40 transition-all"
                               >
                                 <option value="openai">OpenAI</option>
+                                <option value="inception">Inception AI</option>
                                 <option value="anthropic">Anthropic</option>
                                 <option value="google">Google Gemini</option>
                                 <option value="openrouter">OpenRouter</option>
@@ -268,7 +269,7 @@ export const SettingsPanel: React.FC = () => {
                               />
                             </div>
                           </div>
-
+ 
                           <div className="grid grid-cols-1 gap-3">
                             <div>
                               <label className="text-[10px] font-bold text-muted uppercase tracking-tight mb-1 block">API Key <span className="text-[9px] opacity-60 font-normal">(Stored locally)</span></label>
@@ -291,7 +292,7 @@ export const SettingsPanel: React.FC = () => {
                                   className="w-full bg-base border border-default rounded-lg px-3 py-2 text-[12px] text-primary outline-none focus:border-accent-violet/40 transition-all"
                                 />
                               </div>
-                              {(provider.type === 'custom' || provider.type === 'openai') && (
+                              {(provider.type === 'custom' || provider.type === 'openai' || provider.type === 'inception') && (
                                 <div>
                                   <label className="text-[10px] font-bold text-muted uppercase tracking-tight mb-1 block">Custom Base URL (Optional)</label>
                                   <input 

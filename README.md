@@ -45,7 +45,7 @@ NEXUS AI is a browser-based IDE built for developers who want AI assistance with
 ```
 ┌──────────────┐     ┌────────────────┐     ┌──────────────┐
 │  NEXUS AI    │────▶│  Ollama API    │────▶│  Local LLM   │
-│  (Browser)   │     │  localhost:11434│     │  (llama3)    │
+│  (Browser)   │     │ localhost:11434│     │  (llama3)    │
 └──────────────┘     └────────────────┘     └──────────────┘
        │
        │  (optional)

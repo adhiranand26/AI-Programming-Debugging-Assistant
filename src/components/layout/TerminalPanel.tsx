@@ -4,15 +4,30 @@ import { FitAddon } from 'xterm-addon-fit';
 import { WebLinksAddon } from 'xterm-addon-web-links';
 import 'xterm/css/xterm.css';
 import { useLayoutStore, useTerminalStore, useSettingsStore } from '../../store';
-import { Plus, X, Trash2, SplitSquareHorizontal } from 'lucide-react';
+import { Plus, X, Trash2, SplitSquareHorizontal, RefreshCw } from 'lucide-react';
 
 const TerminalInstance = ({ active }: { active: boolean }) => {
   const terminalRef = useRef<HTMLDivElement>(null);
+  const wsRef = useRef<WebSocket | null>(null);
   const { terminalHeight } = useLayoutStore();
-  const { editorFont, editorFontSize } = useSettingsStore();
+  const { editorFontSize } = useSettingsStore();
   const { pendingCommand, setPendingCommand } = useTerminalStore();
   const [term, setTerm] = useState<Terminal | null>(null);
+  const [isConnected, setIsConnected] = useState(false);
   const fitAddonRef = useRef<FitAddon | null>(null);
+
+  const connect = () => {
+    if (wsRef.current) wsRef.current.close();
+    const ws = new WebSocket('ws://localhost:3001');
+    wsRef.current = ws;
+    ws.onopen = () => {
+      setIsConnected(true);
+      term?.writeln('\x1b[32m[SYSTEM]\x1b[0m Node bridge connected.');
+    };
+    ws.onmessage = (event) => term?.write(event.data);
+    ws.onclose = () => setIsConnected(false);
+    ws.onerror = () => setIsConnected(false);
+  };
 
   useEffect(() => {
     if (!terminalRef.current) return;
@@ -20,8 +35,8 @@ const TerminalInstance = ({ active }: { active: boolean }) => {
     const newTerm = new Terminal({
       theme: {
         background: '#09090b',
-        foreground: '#e8e8f0', // --text-secondary
-        cursor: '#7c6fff', // --accent-violet
+        foreground: '#e8e8f0',
+        cursor: '#7c6fff',
         selectionBackground: 'rgba(124, 111, 255, 0.25)',
         black: '#0a0a0c',
         red: '#ff4d6d',
@@ -32,10 +47,14 @@ const TerminalInstance = ({ active }: { active: boolean }) => {
         cyan: '#9ccfd8',
         white: '#ffffff',
       },
-      fontFamily: editorFont || 'JetBrains Mono',
+      // Use a strictly monospace font stack to prevent spacing issues
+      fontFamily: '"JetBrains Mono", "Fira Code", "Cascadia Code", monospace',
       fontSize: editorFontSize || 13,
       cursorBlink: true,
       scrollback: 5000,
+      allowProposedApi: true,
+      letterSpacing: 0,
+      fontWeight: '400'
     });
 
     const fitAddon = new FitAddon();
@@ -45,52 +64,70 @@ const TerminalInstance = ({ active }: { active: boolean }) => {
 
     newTerm.open(terminalRef.current);
     
-    // Slight delay to ensure parent has rendered size
-    setTimeout(() => fitAddon.fit(), 50);
+    // Modern minimal welcome message
+    newTerm.writeln('\x1b[1;35m● NEXUS TERMINAL\x1b[0m \x1b[2mv1.0\x1b[0m');
+    newTerm.writeln('\x1b[2mType commands below to execute locally.\x1b[0m');
+    newTerm.writeln('');
 
-    newTerm.writeln('\x1b[35m[NEXUS AI]\x1b[0m Terminal Ready. Type simulated commands.');
-    newTerm.write('\x1b[36muser@nexus\x1b[0m:\x1b[34m~\x1b[0m$ ');
+    setTerm(newTerm);
+    
+    const ws = new WebSocket('ws://localhost:3001');
+    wsRef.current = ws;
 
-    // Handle basic simulated typing
+    ws.onopen = () => {
+      setIsConnected(true);
+      newTerm.writeln('\x1b[32m✔\x1b[0m Bridge connected. Session ready.');
+      newTerm.write('\r\n');
+    };
+
+    ws.onmessage = (event) => newTerm.write(event.data);
+
+    ws.onerror = () => {
+      newTerm.writeln('\x1b[33m⚠\x1b[0m Bridge offline. Simulator mode active.');
+      newTerm.write('\x1b[36muser@nexus\x1b[0m:\x1b[34m~\x1b[0m$ ');
+    };
+
     newTerm.onData(e => {
-      if (e === '\r') {
-        newTerm.writeln('');
-        newTerm.writeln('\x1b[33m[Simulator]\x1b[0m Real execution requires a backend/Electron container.');
-        newTerm.write('\x1b[36muser@nexus\x1b[0m:\x1b[34m~\x1b[0m$ ');
-      } else if (e === '\u007F') {
-        // Backspace
-        newTerm.write('\b \b');
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(e);
       } else {
-        newTerm.write(e);
+        if (e === '\r') {
+          newTerm.writeln('\r\n\x1b[2m(Simulation Mode: Bridge Not Found)\x1b[0m');
+          newTerm.write('\x1b[36muser@nexus\x1b[0m:\x1b[34m~\x1b[0m$ ');
+        } else if (e === '\u007F') {
+          newTerm.write('\b \b');
+        } else {
+          newTerm.write(e);
+        }
       }
     });
 
-    setTerm(newTerm);
+    setTimeout(() => {
+      try { fitAddon.fit(); } catch (e) {}
+    }, 100);
 
     return () => {
+      ws.close();
       newTerm.dispose();
     };
   }, []);
 
-  // Handle Resize
   useEffect(() => {
     if (active && fitAddonRef.current) {
-      // Need timeout because height transition takes 180ms
-      const timeout = setTimeout(() => {
-        fitAddonRef.current?.fit();
-      }, 200);
-      return () => clearTimeout(timeout);
+      setTimeout(() => {
+        try { fitAddonRef.current?.fit(); } catch (e) {}
+      }, 50);
     }
   }, [terminalHeight, active]);
 
-  // Handle pending command execution
   useEffect(() => {
     if (active && pendingCommand && term) {
-      term.write(pendingCommand + '\r');
-      term.writeln('\x1b[33m[Simulator]\x1b[0m Simulating execution of: ' + pendingCommand);
-      term.writeln('Running in browser mode. Output is simulated.');
-      term.writeln('');
-      term.write('\x1b[36muser@nexus\x1b[0m:\x1b[34m~\x1b[0m$ ');
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+        wsRef.current.send(pendingCommand + '\n');
+      } else {
+        term.writeln('\r\n\x1b[33m[RUN]\x1b[0m ' + pendingCommand);
+        term.write('\x1b[36muser@nexus\x1b[0m:\x1b[34m~\x1b[0m$ ');
+      }
       setPendingCommand(null);
     }
   }, [pendingCommand, active, term, setPendingCommand]);
@@ -101,6 +138,13 @@ const TerminalInstance = ({ active }: { active: boolean }) => {
       style={{ opacity: active ? 1 : 0, pointerEvents: active ? 'auto' : 'none', zIndex: active ? 10 : 0 }}
     >
       <div className="w-full h-full p-2 bg-[#09090b]" ref={terminalRef} />
+      
+      {!isConnected && (
+        <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-warning/10 text-warning text-[10px] rounded border border-warning/20 backdrop-blur-md animate-pulse">
+          <RefreshCw size={10} onClick={connect} className="cursor-pointer" />
+          SIMULATOR
+        </div>
+      )}
     </div>
   );
 };
@@ -116,7 +160,6 @@ export const TerminalPanel: React.FC = () => {
       style={{ height: `${terminalHeight}px` }}
       className="w-full bg-[#09090b] border-t border-default flex flex-col flex-shrink-0 z-20 absolute bottom-[24px]"
     >
-      {/* Header */}
       <div className="h-[34px] flex-shrink-0 flex items-center justify-between px-2 border-b border-default bg-panel">
         <div className="flex items-center h-full">
           {terminals.map(t => (
@@ -157,8 +200,6 @@ export const TerminalPanel: React.FC = () => {
           </button>
         </div>
       </div>
-      
-      {/* Instances Container */}
       <div className="flex-1 relative overflow-hidden">
         {terminals.map(t => (
           <TerminalInstance key={t.id} active={t.id === activeTerminalId} />

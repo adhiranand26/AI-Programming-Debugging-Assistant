@@ -69,6 +69,8 @@ export async function* streamChat({ provider, model, prompt, system }: StreamCha
 
   if (provider.type === 'ollama') {
     yield* streamOllama(provider.baseUrl || 'http://localhost:11434', model, prompt, system, aiTemperature, aiTopP, aiContextLength);
+  } else if (provider.type === 'inception') {
+    yield* streamInception(provider, model, prompt, system, aiTemperature, aiTopP, aiContextLength);
   } else if (provider.type === 'openai' || provider.type === 'openrouter' || provider.type === 'custom') {
     yield* streamOpenAICompatible(provider, model, prompt, system, aiTemperature, aiTopP);
   } else if (provider.type === 'anthropic') {
@@ -127,6 +129,68 @@ async function* streamOllama(baseUrl: string, model: string, prompt: string, sys
   } catch (error: any) {
     if (error.name === 'TypeError') throw new Error('Ollama is unreachable. Ensure it is running at the configured URL.');
     throw error;
+  }
+}
+
+async function* streamInception(provider: AIProvider, model: string, prompt: string, system: string | undefined, temperature: number, top_p: number, max_tokens: number) {
+  const url = provider.baseUrl || 'https://api.inceptionlabs.ai/v1';
+  const apiKey = provider.apiKey || import.meta.env.VITE_INCEPTION_API_KEY;
+  
+  if (!apiKey) throw new Error(`API Key missing for ${provider.name}. Add it in Settings or .env`);
+
+  const messages = [];
+  if (system) messages.push({ role: 'system', content: system });
+  messages.push({ role: 'user', content: prompt });
+
+  const response = await fetch(`${url.replace(/\/$/, '')}/chat/completions`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model,
+      messages,
+      stream: true,
+      temperature,
+      top_p,
+      max_tokens: max_tokens || 8192,
+      reasoning_effort: 'instant' // Default for Inception
+    }),
+  });
+
+  if (!response.ok) {
+    const err = await response.json().catch(() => ({}));
+    if (response.status === 401) throw new Error('Invalid Inception API Key.');
+    throw new Error(err.error?.message || `Inception API Error: ${response.status}`);
+  }
+
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('Stream not supported');
+  const decoder = new TextDecoder();
+
+  let buffer = '';
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    
+    buffer += decoder.decode(value, { stream: true });
+    const lines = buffer.split('\n');
+    buffer = lines.pop() || '';
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed === 'data: [DONE]') continue;
+      if (trimmed.startsWith('data: ')) {
+        try {
+          const parsed = JSON.parse(trimmed.slice(6));
+          const content = parsed.choices?.[0]?.delta?.content;
+          if (content) yield content;
+        } catch (e) {
+          // Ignore parse errors
+        }
+      }
+    }
   }
 }
 

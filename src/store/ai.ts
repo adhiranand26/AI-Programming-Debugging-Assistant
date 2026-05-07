@@ -38,7 +38,7 @@ export const useAIStore = create<AIState>()(
       isStreaming: false,
       mode: 'chat',
       pinnedFiles: [],
-      activeModel: 'llama3',
+      activeModel: 'mercury-2',
       models: [],
       isOllamaConnected: false,
       contextWindowUsage: 0,
