@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { useLayoutStore, useAIStore, useEditorStore, useSettingsStore, useUIStore } from '../../store';
+import { useLayoutStore, useAIStore, useEditorStore, useSettingsStore, useUIStore, useWorkspaceStore } from '../../store';
 import { Send, Trash2, Play, Copy, Sparkles, Command, ChevronDown, Check, Settings } from 'lucide-react';
 import { checkOllamaConnection, fetchOllamaModels, streamChat } from '../../services/aiProvider';
+import { readFileContent } from '../../services/fileSystem';
 import { buildPrompt } from '../../services/contextBuilder';
 import { PulsePanel } from './PulsePanel';
 
@@ -18,7 +19,7 @@ const TypingIndicator = () => (
 
 const MessageBlock = ({ content, role, isStreaming }: { content: string; role: 'user' | 'assistant'; isStreaming?: boolean }) => {
   const parts = content.split(/(```[\s\S]*?```)/g);
-  const { setDiffState, activeFileId, openFiles } = useEditorStore();
+  const { setDiffState, updateFileContent, activeFileId, openFiles } = useEditorStore();
   const activeFile = openFiles.find(f => f.id === activeFileId);
 
   return (
@@ -53,18 +54,26 @@ const MessageBlock = ({ content, role, isStreaming }: { content: string; role: '
                       <Copy size={14} />
                     </button>
                     {activeFile && (
-                      <button 
-                        onClick={() => setDiffState({
-                          active: true,
-                          originalContent: activeFile.content,
-                          modifiedContent: code,
-                          filename: activeFile.name,
-                          fileId: activeFile.id
-                        })}
-                        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20 hover:bg-accent-cyan/20 transition-all active:scale-95 text-[10px] font-bold uppercase"
-                      >
-                        <Play size={10} fill="currentColor" /> Diff
-                      </button>
+                      <>
+                        <button 
+                          onClick={() => setDiffState({
+                            active: true,
+                            originalContent: activeFile.content,
+                            modifiedContent: code,
+                            filename: activeFile.name,
+                            fileId: activeFile.id
+                          })}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20 hover:bg-accent-cyan/20 transition-all active:scale-95 text-[10px] font-bold uppercase"
+                        >
+                          <Play size={10} fill="currentColor" /> Diff
+                        </button>
+                        <button 
+                          onClick={() => updateFileContent(activeFile.id, code)}
+                          className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-success/10 text-success border border-success/20 hover:bg-success/20 transition-all active:scale-95 text-[10px] font-bold uppercase"
+                        >
+                          <Check size={10} fill="currentColor" /> Apply
+                        </button>
+                      </>
                     )}
                   </div>
                 </div>
@@ -98,8 +107,9 @@ export const AIPanel: React.FC = () => {
   
   const { providers, activeProviderId, setActiveProvider, ollamaBaseUrl } = useSettingsStore();
   
-  const { openFiles, activeFileId, activeSelection } = useEditorStore();
+  const { openFiles, activeFileId, activeSelection, diffState, setDiffState, updateFileContent } = useEditorStore();
   const activeFile = openFiles.find(f => f.id === activeFileId) || null;
+  const workspaceFiles = useWorkspaceStore(state => state.files);
 
   const [input, setInput] = useState('');
   const [showModels, setShowModels] = useState(false);
@@ -167,10 +177,65 @@ export const AIPanel: React.FC = () => {
     setStreaming(true);
 
     try {
-      const { prompt, system } = buildPrompt(mode, userText, activeFile, activeSelection, []);
-      const stream = streamChat({ provider: provider as any, model, prompt, system });
-      for await (const chunk of stream) {
-        updateMessage(assistantMsgId, (prev) => prev + chunk);
+      let { prompt, system } = buildPrompt(mode, userText, activeFile, activeSelection, []);
+      let interactionCount = 0;
+      let shouldContinue = true;
+
+      while (shouldContinue && interactionCount < 5) {
+        interactionCount++;
+        const stream = streamChat({ provider: provider as any, model, prompt, system });
+        
+        let fullResponse = '';
+        for await (const chunk of stream) {
+          fullResponse += chunk;
+          updateMessage(assistantMsgId, (prev) => {
+            // Only append the new chunk
+            return prev + chunk;
+          });
+        }
+
+        // Check for tool calls
+        const readFileMatch = fullResponse.match(/<READ_FILE\s+path="([^"]+)"\s*\/>/);
+        const listDirMatch = fullResponse.match(/<LIST_DIR\s+path="([^"]+)"\s*\/>/);
+
+        if (readFileMatch) {
+          const path = readFileMatch[1];
+          // Try to find file handle
+          const findNode = (nodes: any[], target: string): any => {
+            for (const n of nodes) {
+              if (n.path === target) return n;
+              if (n.children) {
+                const found = findNode(n.children, target);
+                if (found) return found;
+              }
+            }
+            return null;
+          };
+          const node = findNode(workspaceFiles, path);
+          let toolResult = '';
+          if (node && node.kind === 'file') {
+            try {
+              const content = await readFileContent(node.handle);
+              toolResult = `\n\n[System: Content of ${path}]\n\`\`\`\n${content}\n\`\`\`\n`;
+            } catch (e) {
+              toolResult = `\n\n[System: Error reading file ${path}]\n`;
+            }
+          } else {
+            toolResult = `\n\n[System: File not found in current workspace tree: ${path}]\n`;
+          }
+          
+          prompt = `Previous AI Output:\n${fullResponse}${toolResult}\nContinue your task now based on this new information.`;
+          updateMessage(assistantMsgId, (prev) => prev + `\n\n*Read file: ${path}*... `);
+        } else if (listDirMatch) {
+          const path = listDirMatch[1];
+          // Simple flat tree representation
+          const treeStr = workspaceFiles.map(f => f.path).join('\\n');
+          const toolResult = `\n\n[System: Workspace structure (partial)]\n${treeStr}\n`;
+          prompt = `Previous AI Output:\n${fullResponse}${toolResult}\nContinue your task now based on this new information.`;
+          updateMessage(assistantMsgId, (prev) => prev + `\n\n*Listed directory structure for ${path}*... `);
+        } else {
+          shouldContinue = false;
+        }
       }
     } catch (err: any) {
       updateMessage(assistantMsgId, (prev) => prev + `\n\n**Error:** ${err.message}`);
@@ -251,7 +316,32 @@ export const AIPanel: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <div className="p-5 bg-panel border-t border-default">
+      <div className="p-5 bg-panel border-t border-default flex flex-col gap-3">
+        {diffState?.active && (
+          <div className="flex items-center justify-between p-3 rounded-xl bg-accent-cyan/10 border border-accent-cyan/20 animate-[fadeSlideUp_0.2s_ease-out]">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-bold text-accent-cyan uppercase tracking-wider">Review Diff</span>
+              <span className="text-[10px] font-mono text-muted truncate max-w-[100px]">{diffState.filename}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setDiffState(null)}
+                className="px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider text-muted hover:text-error hover:bg-surface transition-colors"
+              >
+                Reject
+              </button>
+              <button 
+                onClick={() => {
+                  updateFileContent(diffState.fileId, diffState.modifiedContent);
+                  setDiffState(null);
+                }}
+                className="flex items-center gap-1 px-2 py-1 rounded-md bg-success/20 text-success border border-success/30 hover:bg-success/30 transition-all text-[10px] font-bold uppercase tracking-wider shadow-sm"
+              >
+                <Check size={10} strokeWidth={3} /> Allow
+              </button>
+            </div>
+          </div>
+        )}
         <div className="relative bg-surface border border-default rounded-2xl focus-within:border-accent-cyan/50 focus-within:shadow-[0_0_20px_rgba(6,182,212,0.05)] transition-all duration-300">
           <textarea
             ref={textareaRef}

@@ -1,12 +1,19 @@
 import React from 'react';
-import { useEditorStore, useUIStore } from '../../store';
+import { useEditorStore, useUIStore, useWorkspaceStore } from '../../store';
 import { FilePlus, FolderOpen, Terminal, Sparkles, BookOpen, Code2 } from 'lucide-react';
 
 export const WelcomeScreen: React.FC = () => {
   const { openFile } = useEditorStore();
   const { setCommandPaletteOpen } = useUIStore();
+  const { handle, openWorkspace } = useWorkspaceStore();
 
-  const handleNewFile = () => {
+  const handleNewFile = async () => {
+    if (!handle) {
+      await openWorkspace();
+      // After opening workspace, we could proceed, but for now we just return
+      // if the user cancelled. If they didn't, the workspace will load.
+      if (!useWorkspaceStore.getState().handle) return;
+    }
     const id = `untitled-${Date.now()}`;
     openFile({
       id,
@@ -62,7 +69,7 @@ export const WelcomeScreen: React.FC = () => {
             icon={<FolderOpen size={20} />} 
             title="Open Folder" 
             desc="Work on existing code" 
-            onClick={() => {}}
+            onClick={openWorkspace}
             color="text-success"
           />
           <WelcomeCard 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { useEditorStore, useUIStore, useLayoutStore, useTerminalStore } from '../../store';
-import { Play, Sparkles } from 'lucide-react';
+import { Play, Sparkles, Save } from 'lucide-react';
+import { saveActiveFile } from '../../utils/fileOperations';
 
 export const TitleBar: React.FC = () => {
   const openFiles = useEditorStore(state => state.openFiles);
@@ -106,13 +107,23 @@ export const TitleBar: React.FC = () => {
 
       <div className="flex items-center gap-3">
         {activeFile && (
-          <button 
-            onClick={handleRun}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-success/10 text-success border border-success/20 hover:bg-success/20 transition-all active:scale-95 btn-press shadow-sm"
-          >
-            <Play size={14} fill="currentColor" />
-            <span className="text-[11px] font-bold uppercase tracking-wider">Run</span>
-          </button>
+          <>
+            <button 
+              onClick={saveActiveFile}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-accent-cyan/10 text-accent-cyan border border-accent-cyan/20 hover:bg-accent-cyan/20 transition-all active:scale-95 btn-press shadow-sm"
+              title="Save File (Ctrl+S)"
+            >
+              <Save size={14} />
+              <span className="text-[11px] font-bold uppercase tracking-wider">Save</span>
+            </button>
+            <button 
+              onClick={handleRun}
+              className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-success/10 text-success border border-success/20 hover:bg-success/20 transition-all active:scale-95 btn-press shadow-sm"
+            >
+              <Play size={14} fill="currentColor" />
+              <span className="text-[11px] font-bold uppercase tracking-wider">Run</span>
+            </button>
+          </>
         )}
         
         <div 

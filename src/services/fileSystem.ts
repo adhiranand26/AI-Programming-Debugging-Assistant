@@ -107,3 +107,13 @@ export const createNewFile = async (dirHandle: FileSystemDirectoryHandle, name: 
 export const createNewDirectory = async (dirHandle: FileSystemDirectoryHandle, name: string): Promise<FileSystemDirectoryHandle> => {
   return await dirHandle.getDirectoryHandle(name, { create: true });
 };
+
+export const saveNewFile = async (): Promise<FileSystemFileHandle | null> => {
+  try {
+    const handle = await (window as any).showSaveFilePicker();
+    return handle;
+  } catch (err) {
+    console.error('User cancelled save', err);
+    return null;
+  }
+};

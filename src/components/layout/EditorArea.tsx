@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import Editor, { useMonaco } from '@monaco-editor/react';
-import { useSettingsStore, useEditorStore } from '../../store';
+import { useSettingsStore, useEditorStore, useWorkspaceStore } from '../../store';
+import { saveActiveFile } from '../../utils/fileOperations';
 import { TabBar } from '../editor/TabBar';
 import { WelcomeScreen } from '../editor/WelcomeScreen';
 import { ContextMenu } from '../ui/ContextMenu';
@@ -18,6 +19,22 @@ export const EditorArea: React.FC = () => {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
 
   const activeFile = openFiles.find(f => f.id === activeFileId);
+  const { handle: workspaceHandle, refreshFiles } = useWorkspaceStore();
+
+  const handleSave = async () => {
+    await saveActiveFile();
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        handleSave();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [activeFileId, activeFile, workspaceHandle]);
 
   // Define custom theme
   useEffect(() => {
