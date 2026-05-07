@@ -16,7 +16,7 @@ import { applyTheme } from './themes/themeManager';
 
 function App() {
   const { theme, density, accentHue } = useSettingsStore();
-  const { setSidebarWidth, setAIPanelWidth, setTerminalOpen } = useLayoutStore();
+  const { setSidebarWidth, setAIPanelWidth, setTerminalOpen, terminalOpen } = useLayoutStore();
   const { commandPaletteOpen, setCommandPaletteOpen, setActiveModal } = useUIStore();
 
   useEffect(() => {
@@ -61,7 +61,6 @@ function App() {
             addNotification({ id: Date.now().toString(), type: 'error', message: `Failed to save ${activeFile.name}` });
           }
         } else if (activeFile && activeFile.isDirty) {
-          // Fallback if no file handle (e.g. not opened from workspace)
           saveFile(activeFile.id);
         }
       }
@@ -87,7 +86,6 @@ function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [setCommandPaletteOpen, setActiveModal, setTerminalOpen]);
 
-  // Handle Resizing Constraints
   const handleSidebarResize = (delta: number) => {
     const prev = useLayoutStore.getState().sidebarWidth;
     setSidebarWidth(Math.min(Math.max(prev + delta, 160), 400));
@@ -96,6 +94,11 @@ function App() {
   const handleAIPanelResize = (delta: number) => {
     const prev = useLayoutStore.getState().aiPanelWidth;
     setAIPanelWidth(Math.min(Math.max(prev - delta, 200), 500));
+  };
+
+  const handleTerminalResize = (delta: number) => {
+    const prev = useLayoutStore.getState().terminalHeight;
+    useLayoutStore.getState().setTerminalHeight(Math.min(Math.max(prev - delta, 100), 600));
   };
 
   return (
@@ -109,7 +112,12 @@ function App() {
         
         <div className="flex-1 flex flex-col min-w-0 relative">
           <EditorArea />
-          <TerminalPanel />
+          {terminalOpen && (
+            <>
+              <ResizableBorder isVertical onResize={handleTerminalResize} />
+              <TerminalPanel />
+            </>
+          )}
         </div>
         
         <ResizableBorder onResize={handleAIPanelResize} />
@@ -127,4 +135,3 @@ function App() {
 }
 
 export default App;
-

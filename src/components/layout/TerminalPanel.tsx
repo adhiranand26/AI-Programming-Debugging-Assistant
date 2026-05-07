@@ -18,7 +18,7 @@ const TerminalInstance = ({ active }: { active: boolean }) => {
 
   const connect = () => {
     if (wsRef.current) wsRef.current.close();
-    const ws = new WebSocket('ws://localhost:3001');
+    const ws = new WebSocket('ws://127.0.0.1:3001');
     wsRef.current = ws;
     ws.onopen = () => {
       setIsConnected(true);
@@ -71,7 +71,7 @@ const TerminalInstance = ({ active }: { active: boolean }) => {
 
     setTerm(newTerm);
     
-    const ws = new WebSocket('ws://localhost:3001');
+    const ws = new WebSocket('ws://127.0.0.1:3001');
     wsRef.current = ws;
 
     ws.onopen = () => {
@@ -82,9 +82,15 @@ const TerminalInstance = ({ active }: { active: boolean }) => {
 
     ws.onmessage = (event) => newTerm.write(event.data);
 
-    ws.onerror = () => {
-      newTerm.writeln('\x1b[33m⚠\x1b[0m Bridge offline. Simulator mode active.');
+    ws.onerror = (e) => {
+      console.error("WebSocket Error", e);
+      setIsConnected(false);
+      newTerm.writeln('\x1b[31m✖\x1b[0m Connection failed. Is the bridge running?');
       newTerm.write('\x1b[36muser@nexus\x1b[0m:\x1b[34m~\x1b[0m$ ');
+    };
+    
+    ws.onclose = () => {
+      setIsConnected(false);
     };
 
     newTerm.onData(e => {
@@ -140,9 +146,22 @@ const TerminalInstance = ({ active }: { active: boolean }) => {
       <div className="w-full h-full p-2 bg-[#09090b]" ref={terminalRef} />
       
       {!isConnected && (
-        <div className="absolute top-4 right-4 flex items-center gap-2 px-2 py-1 bg-warning/10 text-warning text-[10px] rounded border border-warning/20 backdrop-blur-md animate-pulse">
-          <RefreshCw size={10} onClick={connect} className="cursor-pointer" />
-          SIMULATOR
+        <div 
+          onClick={connect}
+          className="absolute inset-0 flex flex-col items-center justify-center bg-black/60 backdrop-blur-[2px] z-50 cursor-pointer group hover:bg-black/40 transition-all"
+        >
+          <div className="flex flex-col items-center gap-4 p-8 rounded-3xl bg-panel border border-warning/20 shadow-2xl animate-[fadeSlideUp_0.3s_ease-out]">
+            <div className="w-16 h-16 rounded-2xl bg-warning/10 flex items-center justify-center text-warning group-hover:scale-110 transition-transform">
+              <RefreshCw size={32} className="animate-[spin_4s_linear_infinite]" />
+            </div>
+            <div className="text-center space-y-1">
+              <h3 className="text-lg font-bold text-primary">Terminal Bridge Offline</h3>
+              <p className="text-sm text-muted max-w-[200px]">Click anywhere to attempt reconnection</p>
+            </div>
+            <button className="px-6 py-2 rounded-xl bg-warning text-black font-bold text-sm shadow-lg shadow-warning/20 hover:scale-105 active:scale-95 transition-all">
+              RECONNECT NOW
+            </button>
+          </div>
         </div>
       )}
     </div>
